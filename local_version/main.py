@@ -34,8 +34,11 @@ if __name__ == '__main__':
 
     time_w, strain_w = getWindowedArray(time, strain, N)
 
-    fig, axs = plt.subplots(2, 3, figsize=(10, 8))
-    fig.suptitle('Horizontally stacked subplots')
+    rows = 2
+    cols = 3
+
+    fig, axs = plt.subplots(rows, cols, figsize=(10, 8))
+    fig.suptitle('Curvas para comparar periodograma')
 
     N_fft = 2**4
     test = strain[0:N_fft]
@@ -49,32 +52,24 @@ if __name__ == '__main__':
 
     freq_axis = np.arange(0, fs, fs / N_fft)
 
-    axs[0, 0].plot(range(len(test)), test)
-    axs[0, 0].title.set_text('D1. Long:'+str(len(test)))
+    # diccionario de curvas con titulo, x, y,  si es en funcion de freq y posicion
+    curvas = {'D1. Long': (range(len(test)), test,False,(0, 0)),
+              'Sxx1^  Long:' + str(len(M)): (freq_axis, M, True,(1, 0)),
+              'Sxx1^ con signal. Long:' + str(len(Pxx_den)):(f, Pxx_den, True,(1, 1)),
+              'D2. Long:' + str(len(test2)):(range(len(test2)),test2,False,(0, 2)),
+              'Sxx2^. Long:' + str(len(M2)):(freq_axis, M2, True,(1, 2))
+              }
 
-    axs[1, 0].semilogy(freq_axis, M)
-    axs[1, 0].title.set_text('Sxx1^  Long:' + str(len(M)))
+    # ploteamos las curvas segun corresponda
+    for title, meta in curvas.items():
+        x, y, isXinFreq, pos = meta
+        axs[pos].title.set_text(title)
+        if isXinFreq:
+            axs[pos].semilogy(x, y)
+        else:
+            axs[pos].plot(x, y)
 
-    axs[1, 1].semilogy(f, Pxx_den)
-    axs[1, 1].title.set_text('Sxx1^ con signal. Long:' + str(len(Pxx_den)))
-
-    axs[0, 2].plot(range(len(test2)), test2)
-    axs[0, 2].title.set_text('D2. Long:' + str(len(test2)))
-
-    axs[1, 2].semilogy(freq_axis, M2)
-    axs[1, 2].title.set_text('Sxx2^. Long:'+str(len(M2)))
-
-
-    left = 0.125  # the left side of the subplots of the figure
-    right = 0.9   # the right side of the subplots of the figure
-    bottom = 0.1  # the bottom of the subplots of the figure
-    top = 0.9     # the top of the subplots of the figure
-    wspace = 0.2  # the amount of width reserved for space between subplots,
-                  # expressed as a fraction of the average axis width
-    hspace = 0.2  # the amount of height reserved for space between subplots,
-                  # expressed as a fraction of the average axis height
-
-    plt.subplots_adjust(left, bottom, right, top, wspace, hspace)
+    plt.subplots_adjust(left=0.125, bottom=0.1, right=0.9, top=0.9, wspace=0.2, hspace=0.2)
     plt.show()
 
 
