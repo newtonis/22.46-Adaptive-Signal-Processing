@@ -1,7 +1,9 @@
 import numpy as np
 import readligo as rl
 import matplotlib.pyplot as plt
+import math
 from scipy import signal
+
 
 
 def getWindowedArray(time, strain, N):
@@ -12,10 +14,17 @@ def getWindowedArray(time, strain, N):
     strain_w.append(strain[(windows_qnt - 1) + N:len(strain)])  # agrego lo que faltaba
     return time_w, strain_w
 
-def getPeriodogram(data_array):
+def getPeriodogram(data_array, fs, N_fft):
     aux = np.fft.fft(data_array)
     sxx_hat = [abs(x) ** 2 / len(aux) for x in aux]
-    return sxx_hat
+    new_size = math.ceil((len(data_array)+1) / 2)
+    #el +1 ...
+    if not np.iscomplex(data_array).all():
+        sxx_hat = sxx_hat[0:new_size]
+        freq_axis = np.arange(0, fs/2, (fs/2) / new_size) # tomo la parte positiva
+    else:
+        freq_axis = np.arange(-fs/2 + fs/N_fft, fs/2, fs / N_fft)
+    return freq_axis, sxx_hat
 
 
 if __name__ == '__main__':
@@ -41,23 +50,22 @@ if __name__ == '__main__':
     fig.suptitle('Curvas para comparar periodograma')
 
     N_fft = 2**4
+    #N_fft = 25
+
     test = strain[0:N_fft]
     test2 = strain[N_fft:N_fft*2]
 
-    M = getPeriodogram(test)
-    M2 = getPeriodogram(test2)
+    fa1,M = getPeriodogram(test, fs, N_fft)
+    fa2, M2 = getPeriodogram(test2, fs, N_fft)
 
-    x = test
-    f, Pxx_den = signal.periodogram(x, fs)
-
-    freq_axis = np.arange(0, fs, fs / N_fft)
+    f, Pxx_den = signal.periodogram(test, fs) #esto puede mostrar la mitad
 
     # diccionario de curvas con titulo, x, y,  si es en funcion de freq y posicion
-    curvas = {'D1. Long': (range(len(test)), test,False,(0, 0)),
-              'Sxx1^  Long:' + str(len(M)): (freq_axis, M, True,(1, 0)),
+    curvas = {'D1. Long'+str(len(test)): (range(len(test)), test,False,(0, 0)),
+              'Sxx1^  Long:' + str(len(M)): (fa1, M, True,(1, 0)),
               'Sxx1^ con signal. Long:' + str(len(Pxx_den)):(f, Pxx_den, True,(1, 1)),
               'D2. Long:' + str(len(test2)):(range(len(test2)),test2,False,(0, 2)),
-              'Sxx2^. Long:' + str(len(M2)):(freq_axis, M2, True,(1, 2))
+              'Sxx2^. Long:' + str(len(M2)):(fa2, M2, True,(1, 2))
               }
 
     # ploteamos las curvas segun corresponda
@@ -73,3 +81,9 @@ if __name__ == '__main__':
     plt.show()
 
 
+# notas:
+# no se puede poner un tamaño muy chico de ventana, pierdo resolucion
+# signal.periodogram:
+# por defecto si la señal es real, te muestra la mitad
+# pone overlapping
+# agrega elementos
